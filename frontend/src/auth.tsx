@@ -1,5 +1,6 @@
 import * as React from "react";
 import authService from "./services/auth";
+import { queryClient } from "./main";
 
 export interface User {
   id: number;
@@ -9,7 +10,7 @@ export interface User {
 
 export interface AuthContext {
   isAuthenticated: boolean;
-  status: 'loggedOut' | 'loggedIn';
+  status: "loggedOut" | "loggedIn";
   user: User | null;
   setUser: (user: User | null) => void;
   login: (email: string, password: string) => Promise<void>;
@@ -33,7 +34,7 @@ function getStoredUser(): User | null {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<User | null>(getStoredUser());
   const isAuthenticated = !!user && authService.isAuthenticated();
-  const status = isAuthenticated ? 'loggedIn' : 'loggedOut';
+  const status = isAuthenticated ? "loggedIn" : "loggedOut";
 
   React.useEffect(() => {
     const storedUser = getStoredUser();
@@ -53,6 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = React.useCallback(async () => {
+    queryClient.clear();
     await authService.logout();
     localStorage.removeItem(key);
     setUser(null);
