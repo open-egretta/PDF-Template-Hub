@@ -43,7 +43,7 @@ DB_PASSWORD=your_database_password
 JWT_SECRET=your_jwt_secret
 
 # Features
-ALLOW_REGISTRATION=true
+ALLOW_REGISTRATION=false
 ```
 
 ### 3. 建立資料庫
@@ -115,6 +115,17 @@ curl -X POST http://localhost:3001/api/setup/init \
 | ---- | -------------------- | ---- | ------------- |
 | POST | `/api/auth/login`    | 登入 | 公開          |
 | POST | `/api/auth/register` | 註冊 | 公開 (可關閉) |
+
+### 使用者管理
+
+| 方法   | 路徑                            | 說明     | 權限         |
+| ------ | ------------------------------- | -------- | ------------ |
+| POST   | `/api/users`                    | 建立用戶 | 管理員       |
+| GET    | `/api/users`                    | 取得所有用戶 | 管理員   |
+| GET    | `/api/users/:id`                | 取得單一用戶 | 本人/管理員 |
+| PUT    | `/api/users/:id`                | 更新用戶資訊 | 本人/管理員 |
+| POST   | `/api/users/:id/change-password`| 修改密碼 | 本人/管理員 |
+| DELETE | `/api/users/:id`                | 刪除用戶 | 管理員       |
 
 ### 模板
 

@@ -35,6 +35,29 @@ class UserService {
     return user;
   }
   
+  // Admin 建立用戶
+  async createUser({ email, password, username, role = 'user' }) {
+    const existingUser = await getOne(
+      'SELECT id FROM users WHERE email = $1',
+      [email]
+    );
+
+    if (existingUser) {
+      throw new Error('Email already exists');
+    }
+
+    const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+
+    const user = await getOne(
+      `INSERT INTO users (email, password, username, role)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, email, username, role, created_at`,
+      [email, passwordHash, username, role]
+    );
+
+    return user;
+  }
+
   // 登入
   async login(email, password) {
     // 查詢使用者
@@ -96,11 +119,11 @@ class UserService {
   // 取得所有使用者（管理員功能）
   async getAll(organizationId = null) {
     const sql = organizationId
-      ? `SELECT id, email, username, role, organization_id, is_active, created_at, last_login
+      ? `SELECT id, email, username, role, is_active, created_at
          FROM users
          WHERE organization_id = $1
          ORDER BY created_at DESC`
-      : `SELECT id, email, username, role, organization_id, is_active, created_at, last_login
+      : `SELECT id, email, username, role, is_active, created_at
          FROM users
          ORDER BY created_at DESC`;
     

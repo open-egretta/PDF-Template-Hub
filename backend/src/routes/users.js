@@ -6,15 +6,30 @@ import {
   requireAdmin, 
   requireOwnerOrAdmin 
 } from '../middleware/auth.js';
-import { 
-  validateUpdateUser, 
-  validateChangePassword 
+import {
+  validateCreateUser,
+  validateUpdateUser,
+  validateChangePassword
 } from '../middleware/validate.js';
 
 const router = express.Router();
 
 // 所有路由都需要認證
 router.use(authenticate);
+
+// Admin 建立用戶
+router.post('/', requireAdmin, validateCreateUser, async (req, res) => {
+  try {
+    const { email, password, username, role } = req.body;
+    const user = await userService.createUser({ email, password, username, role });
+    res.status(201).json({
+      message: 'User created successfully',
+      user
+    });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
 
 // 取得所有使用者（僅管理員）
 router.get('/', requireAdmin, async (req, res) => {
