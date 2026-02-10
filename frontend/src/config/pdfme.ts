@@ -16,8 +16,10 @@ import {
   checkbox,
   radioGroup,
 } from "@pdfme/schemas";
+import apiService from "@/services/api";
 
-export const fonts: Font = {
+// 靜態字型
+export const builtinFonts: Font = {
   ...getDefaultFont(),
   LINESeed: {
     data: new URL("../fonts/LINESeedTW_TTF_Rg.ttf", import.meta.url).href,
@@ -52,6 +54,55 @@ export const fonts: Font = {
     subset: false,
   },
 };
+
+export const fonts: Font = builtinFonts;
+
+interface FontRecord {
+  id: number;
+  name: string;
+  is_builtin: boolean;
+  download_url: string | null;
+}
+
+let fontCachePromise: Promise<Font> | null = null;
+
+export function loadAllFonts(): Promise<Font> {
+  if (!fontCachePromise) {
+    fontCachePromise = _doLoadAllFonts();
+  }
+  return fontCachePromise;
+}
+
+export function invalidateFontCache() {
+  fontCachePromise = null;
+}
+
+async function _doLoadAllFonts(): Promise<Font> {
+  try {
+    const res = await apiService.get<{ data: FontRecord[] }>("/fonts");
+    const customFonts: Font = {};
+
+    const fetches = res.data
+      .filter((f) => !f.is_builtin && f.download_url)
+      .map(async (f) => {
+        const resp = await fetch(f.download_url!, { cache: "force-cache" });
+        if (!resp.ok) return;
+        const buffer = await resp.arrayBuffer();
+        customFonts[f.name] = {
+          data: buffer,
+          fallback: false,
+          subset: false,
+        };
+      });
+
+    await Promise.all(fetches);
+
+    return { ...builtinFonts, ...customFonts };
+  } catch {
+    fontCachePromise = null;
+    return { ...builtinFonts };
+  }
+}
 
 export const plugins = {
   Text: text,

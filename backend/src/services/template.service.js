@@ -18,7 +18,7 @@ import {
   checkbox,
   radioGroup,
 } from "@pdfme/schemas";
-import { transaction } from '../db/helpers.js';
+import { transaction, getMany } from '../db/helpers.js';
 
 import fs from 'fs';
 import path from 'path';
@@ -34,7 +34,7 @@ const chenYuluoyanFontPath = path.join(__dirname, '../fonts/ChenYuluoyan-2.0-Thi
 const iansuiFontPath = path.join(__dirname, '../fonts/Iansui-Regular.ttf');
 const cubic11FontPath = path.join(__dirname, '../fonts/Cubic_11.ttf');
 
-const font = {
+const builtinFont = {
   ...getDefaultFont(),
   LINESeed: {
     data: fs.readFileSync(lineFontPath),
@@ -61,6 +61,39 @@ const font = {
     fallback: false,
   },
 };
+
+// 自訂字型快取
+const customFontCache = new Map();
+const uploadDir = path.join(__dirname, '../../uploads/fonts');
+
+async function getAllFonts() {
+  const font = { ...builtinFont };
+
+  try {
+    const customFonts = await getMany('SELECT * FROM fonts WHERE is_builtin = false');
+    for (const f of customFonts) {
+      if (!customFontCache.has(f.file_name)) {
+        const filePath = path.join(uploadDir, f.file_name);
+        if (fs.existsSync(filePath)) {
+          customFontCache.set(f.file_name, fs.readFileSync(filePath));
+        }
+      }
+      const data = customFontCache.get(f.file_name);
+      if (data) {
+        font[f.name] = { data, fallback: false };
+      }
+    }
+  } catch {
+    // DB 尚未初始化時忽略錯誤，僅使用內建字型
+  }
+
+  return font;
+}
+
+// 清除快取（上傳/刪除字型時呼叫）
+export function clearFontCache() {
+  customFontCache.clear();
+}
 
 const plugins = {
   multiVariableText,
@@ -97,6 +130,8 @@ class TemplateService {
 
     checkTemplate(templateJson);
 
+    const font = await getAllFonts();
+
     const pdf = await generate({
       template: templateJson,
       inputs: getInputFromTemplate(templateJson),
@@ -123,6 +158,8 @@ class TemplateService {
     const templateJson = JSON.parse(schema);
 
     checkTemplate(templateJson);
+
+    const font = await getAllFonts();
 
     const pdf = await generate({
       template: templateJson,

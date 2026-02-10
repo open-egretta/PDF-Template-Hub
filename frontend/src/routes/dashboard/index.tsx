@@ -7,7 +7,7 @@ import {
   Link as ChakraLink,
 } from "@chakra-ui/react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { FileTextIcon, UsersIcon } from "lucide-react";
+import { FileTextIcon, UsersIcon, TypeIcon } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/")({
   component: RouteComponent,
@@ -28,6 +28,12 @@ const menuItems = [
     icon: UsersIcon,
     title: "使用者管理",
     description: "管理系統用戶，建立帳號與權限設定",
+  },
+  {
+    to: "/dashboard/fonts" as const,
+    icon: TypeIcon,
+    title: "字型管理",
+    description: "上傳與管理 PDF 模板使用的字型",
   },
 ];
 

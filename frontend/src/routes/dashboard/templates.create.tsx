@@ -11,7 +11,7 @@ import { Designer } from "@pdfme/ui";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import apiService from "@/services/api";
-import { fonts, plugins } from "@/config/pdfme";
+import { loadAllFonts, plugins } from "@/config/pdfme";
 import { toaster } from "@/components/ui/toaster";
 
 export const Route = createFileRoute("/dashboard/templates/create")({
@@ -109,10 +109,16 @@ function RouteComponent() {
   const [description, setDescription] = useState("");
 
   useEffect(() => {
-    if (designerRef.current) {
-      if (!designerRef.current) return;
+    if (!designerRef.current) return;
+
+    let destroyed = false;
+
+    const init = async () => {
       try {
-        //
+        const allFonts = await loadAllFonts();
+
+        if (destroyed || !designerRef.current) return;
+
         const template: Template = {
           schemas: [[]],
           basePdf: {
@@ -127,7 +133,7 @@ function RouteComponent() {
           domContainer: designerRef.current,
           template: template,
           options: {
-            font: fonts,
+            font: allFonts,
             sidebarOpen: true,
             maxZoom: 250,
           },
@@ -136,9 +142,12 @@ function RouteComponent() {
       } catch (error) {
         console.error(error);
       }
-    }
+    };
+
+    init();
 
     return () => {
+      destroyed = true;
       designer.current?.destroy();
     };
   }, [designerRef]);

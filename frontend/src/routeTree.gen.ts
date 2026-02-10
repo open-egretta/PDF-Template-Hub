@@ -18,6 +18,7 @@ import { Route as TemplatesIndexRouteImport } from './routes/templates/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as TemplatesIdRouteImport } from './routes/templates/$id'
 import { Route as DashboardUsersRouteImport } from './routes/dashboard/users'
+import { Route as DashboardFontsRouteImport } from './routes/dashboard/fonts'
 import { Route as DashboardTemplatesRouteRouteImport } from './routes/dashboard/templates.route'
 import { Route as DashboardTemplatesIndexRouteImport } from './routes/dashboard/templates.index'
 import { Route as DashboardTemplatesCreateRouteImport } from './routes/dashboard/templates.create'
@@ -68,6 +69,11 @@ const DashboardUsersRoute = DashboardUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => DashboardRouteRoute,
 } as any)
+const DashboardFontsRoute = DashboardFontsRouteImport.update({
+  id: '/fonts',
+  path: '/fonts',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
 const DashboardTemplatesRouteRoute = DashboardTemplatesRouteRouteImport.update({
   id: '/templates',
   path: '/templates',
@@ -98,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/login': typeof LoginRoute
   '/dashboard/templates': typeof DashboardTemplatesRouteRouteWithChildren
+  '/dashboard/fonts': typeof DashboardFontsRoute
   '/dashboard/users': typeof DashboardUsersRoute
   '/templates/$id': typeof TemplatesIdRoute
   '/dashboard/': typeof DashboardIndexRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/login': typeof LoginRoute
+  '/dashboard/fonts': typeof DashboardFontsRoute
   '/dashboard/users': typeof DashboardUsersRoute
   '/templates/$id': typeof TemplatesIdRoute
   '/dashboard': typeof DashboardIndexRoute
@@ -126,6 +134,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/login': typeof LoginRoute
   '/dashboard/templates': typeof DashboardTemplatesRouteRouteWithChildren
+  '/dashboard/fonts': typeof DashboardFontsRoute
   '/dashboard/users': typeof DashboardUsersRoute
   '/templates/$id': typeof TemplatesIdRoute
   '/dashboard/': typeof DashboardIndexRoute
@@ -143,6 +152,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/login'
     | '/dashboard/templates'
+    | '/dashboard/fonts'
     | '/dashboard/users'
     | '/templates/$id'
     | '/dashboard/'
@@ -155,6 +165,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/login'
+    | '/dashboard/fonts'
     | '/dashboard/users'
     | '/templates/$id'
     | '/dashboard'
@@ -170,6 +181,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/login'
     | '/dashboard/templates'
+    | '/dashboard/fonts'
     | '/dashboard/users'
     | '/templates/$id'
     | '/dashboard/'
@@ -252,6 +264,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardUsersRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
+    '/dashboard/fonts': {
+      id: '/dashboard/fonts'
+      path: '/fonts'
+      fullPath: '/dashboard/fonts'
+      preLoaderRoute: typeof DashboardFontsRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
     '/dashboard/templates': {
       id: '/dashboard/templates'
       path: '/templates'
@@ -303,12 +322,14 @@ const DashboardTemplatesRouteRouteWithChildren =
 
 interface DashboardRouteRouteChildren {
   DashboardTemplatesRouteRoute: typeof DashboardTemplatesRouteRouteWithChildren
+  DashboardFontsRoute: typeof DashboardFontsRoute
   DashboardUsersRoute: typeof DashboardUsersRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
 
 const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardTemplatesRouteRoute: DashboardTemplatesRouteRouteWithChildren,
+  DashboardFontsRoute: DashboardFontsRoute,
   DashboardUsersRoute: DashboardUsersRoute,
   DashboardIndexRoute: DashboardIndexRoute,
 }

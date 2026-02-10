@@ -18,7 +18,8 @@ import {
 } from "@chakra-ui/react";
 import { PiFilePdf } from "react-icons/pi";
 import { ImageDownIcon } from "lucide-react";
-import { fonts, plugins } from "@/config/pdfme";
+import { loadAllFonts, plugins } from "@/config/pdfme";
+import type { Font } from "@pdfme/common";
 import { pdf2img } from "@pdfme/converter";
 import { toaster } from "@/components/ui/toaster";
 
@@ -50,78 +51,65 @@ function RouteComponent() {
   const templateData = Route.useLoaderData();
   const uiRef = useRef<HTMLDivElement | null>(null);
   const ui = useRef<Form | Viewer | null>(null);
+  const loadedFonts = useRef<Font | null>(null);
 
   const [mode] = useState<Mode>(
     (localStorage.getItem("mode") as Mode) ?? "form",
   );
 
-  const buildUi = useCallback(async (mode: Mode) => {
-    if (!uiRef.current) return;
-    try {
-      let template: Template = {
-        schemas: [{}],
-        basePdf: {
-          width: 210,
-          height: 297,
-          padding: [20, 10, 20, 10],
-        },
-      } as Template;
-      // const templateIdFromQuery = searchParams.get("template");
-      // searchParams.delete("template");
-      // setSearchParams(searchParams, { replace: true });
-      const templateFromLocal = localStorage.getItem("template");
+  const buildUi = useCallback(
+    async (mode: Mode) => {
+      if (!uiRef.current) return;
+      try {
+        const allFonts = await loadAllFonts();
+        loadedFonts.current = allFonts;
 
-      // if (templateIdFromQuery) {
-      //   const templateJson = await getTemplateById(templateIdFromQuery);
-      //   checkTemplate(templateJson);
-      //   template = templateJson;
+        let template: Template = {
+          schemas: [{}],
+          basePdf: {
+            width: 210,
+            height: 297,
+            padding: [20, 10, 20, 10],
+          },
+        } as Template;
 
-      //   if (!templateFromLocal) {
-      //     localStorage.setItem("template", JSON.stringify(templateJson));
-      //   }
-      // } else if (templateFromLocal) {
-      //   const templateJson = JSON.parse(templateFromLocal) as Template;
-      //   checkTemplate(templateJson);
-      //   template = templateJson;
-      // }
-      if (templateFromLocal) {
-        const templateJson = JSON.parse(templateFromLocal) as Template;
-        checkTemplate(templateJson);
-        template = templateJson;
-      }
-      let inputs = getInputFromTemplate(template);
-      console.log(inputs);
-      const inputsString = localStorage.getItem("inputs");
-      if (inputsString) {
-        const inputsJson = JSON.parse(inputsString);
-        inputs = inputsJson;
-      }
+        // 優先使用 API 載入的 templateData
+        if (templateData?.schema) {
+          const templateJson = JSON.parse(templateData.schema) as Template;
+          checkTemplate(templateJson);
+          template = templateJson;
+        }
 
-      console.log(inputs);
-      ui.current = new (mode === "form" ? Form : Viewer)({
-        domContainer: uiRef.current,
-        template,
-        inputs,
-        options: {
-          font: fonts,
-          lang: "en",
-          labels: { "signature.clear": "Clear" },
-          theme: {
-            token: {
-              colorPrimary: "#25c2a0",
+        const inputs = getInputFromTemplate(template);
+
+        ui.current = new (mode === "form" ? Form : Viewer)({
+          domContainer: uiRef.current,
+          template,
+          inputs,
+          options: {
+            font: allFonts,
+            lang: "en",
+            labels: { "signature.clear": "Clear" },
+            theme: {
+              token: {
+                colorPrimary: "#25c2a0",
+              },
             },
           },
-        },
-        plugins,
-      });
-    } catch {
-      localStorage.removeItem("inputs");
-      localStorage.removeItem("template");
-    }
-  }, []);
+          plugins,
+        });
+      } catch (e) {
+        console.error("Failed to build UI:", e);
+        toaster.error({
+          title: "載入模板失敗",
+          description: String(e),
+        });
+      }
+    },
+    [templateData],
+  );
 
   const onResetInputs = () => {
-    localStorage.removeItem("inputs");
     if (ui.current) {
       const template = ui.current.getTemplate();
       ui.current.setInputs(getInputFromTemplate(template));
@@ -137,14 +125,6 @@ function RouteComponent() {
     };
   }, [mode, uiRef, buildUi]);
 
-  useEffect(() => {
-    if (ui.current && templateData) {
-      const templateJSON = JSON.parse(templateData.schema);
-      ui.current.updateTemplate(templateJSON);
-      ui.current.setInputs(getInputFromTemplate(templateJSON));
-    }
-  }, [templateData]);
-
   const generatePDF = async (currentRef: Designer | Form | Viewer | null) => {
     if (!currentRef) return;
     const template = currentRef.getTemplate();
@@ -153,7 +133,7 @@ function RouteComponent() {
       typeof (currentRef as Viewer | Form).getInputs === "function"
         ? (currentRef as Viewer | Form).getInputs()
         : getInputFromTemplate(template);
-    const font = fonts;
+    const font = loadedFonts.current || (await loadAllFonts());
 
     try {
       const pdf = await generate({
@@ -186,7 +166,7 @@ function RouteComponent() {
       typeof (currentRef as Viewer | Form).getInputs === "function"
         ? (currentRef as Viewer | Form).getInputs()
         : getInputFromTemplate(template);
-    const font = fonts;
+    const font = loadedFonts.current || (await loadAllFonts());
 
     try {
       const pdf = await generate({
@@ -200,7 +180,6 @@ function RouteComponent() {
         plugins,
       });
 
-      // const blob = new Blob([pdf.buffer], { type: "application/pdf" });
       const images = await pdf2img(pdf.buffer, {
         scale: 2,
         imageType: "jpeg",

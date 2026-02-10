@@ -12,7 +12,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import apiService from "@/services/api";
 import { toaster } from "@/components/ui/toaster";
-import { fonts, plugins } from "@/config/pdfme";
+import { loadAllFonts, plugins } from "@/config/pdfme";
 
 export const Route = createFileRoute("/dashboard/templates/edit/$id")({
   loader: async ({ params: { id } }) => {
@@ -107,11 +107,18 @@ function RouteComponent() {
   };
 
   useEffect(() => {
-    if (designerRef.current) {
-      if (!designerRef.current) return;
+    if (!designerRef.current) return;
+
+    let destroyed = false;
+
+    const init = async () => {
       try {
-        //
-        const template: Template = {
+        const allFonts = await loadAllFonts();
+
+        if (destroyed || !designerRef.current) return;
+
+        // 如果有 templateData，直接使用它作為初始 template
+        let template: Template = {
           schemas: [[]],
           basePdf: {
             width: 210,
@@ -121,11 +128,15 @@ function RouteComponent() {
           },
         };
 
+        if (templateData?.schema) {
+          template = JSON.parse(templateData.schema);
+        }
+
         designer.current = new Designer({
           domContainer: designerRef.current,
-          template: template,
+          template,
           options: {
-            font: fonts,
+            font: allFonts,
             sidebarOpen: true,
             maxZoom: 250,
           },
@@ -134,23 +145,20 @@ function RouteComponent() {
       } catch (error) {
         console.error(error);
       }
-    }
+    };
+
+    init();
 
     return () => {
+      destroyed = true;
       designer.current?.destroy();
     };
-  }, [designerRef]);
+  }, [designerRef, templateData]);
 
   const [name, setName] = useState(templateData.name || "");
   const [description, setDescription] = useState(
     templateData.description || "",
   );
-  useEffect(() => {
-    if (designer.current && templateData) {
-      const templateJSON = JSON.parse(templateData.schema);
-      designer.current.updateTemplate(templateJSON);
-    }
-  }, [templateData]);
   return (
     <Container>
       <Button onClick={toggleEditingStaticSchemas}>
