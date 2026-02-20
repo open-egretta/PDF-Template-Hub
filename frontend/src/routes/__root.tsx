@@ -15,6 +15,7 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { CiMenuBurger } from "react-icons/ci";
+import githubSVG from "../assets/github.svg";
 
 import type { AuthContext } from "../auth";
 
@@ -51,11 +52,17 @@ const RootLayout = () => {
         bg="teal.500"
         color="white"
       >
-        <Flex alignItems={"center"}>
+        <Flex alignItems={"center"} gap={2}>
           <Heading as={"h1"} size={"lg"} letterSpacing={"tighter"} mr={2}>
             <Link to="/">PDF Template Hub</Link>
           </Heading>
           <Link to="/about">關於本服務</Link>
+          <a
+            target="_blank"
+            href="https://github.com/open-egretta/PDF-Template-Hub"
+          >
+            <img src={githubSVG} alt="GitHub" style={{ height: "24px" }} />
+          </a>
         </Flex>
 
         <Box display={{ base: "block", md: "none" }} onClick={handleToggle}>
